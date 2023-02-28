@@ -19,19 +19,31 @@ export class AuthService {
 
   constructor(private http: HttpClient) { }
 
+  registro(name: string, email: string, password: string): Observable<any> {
+    const url = `${this.baseUrl}/auth/new`;
+    const body = { name, email, password };
+
+    return this.http.post<AuthResponse>(url, body)
+    .pipe(
+      tap(({ok, token}) => {
+        if (ok) {
+          localStorage.setItem('token', token!);
+        }
+      }),
+      map(resp => resp.ok),
+      catchError(err => of(err.error.msg))
+    );
+  }
+
   login(email: string, password: string): Observable<any> {
     const url = `${this.baseUrl}/auth`;
     const body = { email, password };
 
     return this.http.post<AuthResponse>(url, body)
     .pipe(
-      tap(resp => {
-        if (resp.ok) {
-          localStorage.setItem('token', resp.token!);
-          this._usuario = {
-            name: resp.name!,
-            uid: resp.uid!
-          }
+      tap(({ok, token}) => {
+        if (ok) {
+          localStorage.setItem('token', token!);
         }
       }),
       map(resp => resp.ok),
@@ -49,7 +61,8 @@ export class AuthService {
           localStorage.setItem('token', resp.token!);
           this._usuario = {
             name: resp.name!,
-            uid: resp.uid!
+            uid: resp.uid!,
+            email: resp.email!
           }
           return resp.ok;
         }),
